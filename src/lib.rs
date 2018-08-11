@@ -103,7 +103,7 @@ pub enum CreateResult {
 }
 
 pub trait EwasmAPI: Send + Sync {
-    fn consume_gas(amount: u64);
+    fn consume_gas(mut self, amount: u64);
     fn gas_left(self) -> u64;
     fn current_address() -> [u8;20];
 }
@@ -137,7 +137,7 @@ impl TestSetter for TestImpl {
 */
 
 impl EwasmAPI for NativeImpl {
-    fn consume_gas(amount: u64) {
+    fn consume_gas(self, amount: u64) {
     }
     fn gas_left(self) -> u64 {
         0
@@ -148,10 +148,11 @@ impl EwasmAPI for NativeImpl {
 }
 
 impl EwasmAPI for TestImpl {
-    fn consume_gas(amount: u64) {
+    fn consume_gas(mut self, amount: u64) {
+        self.gas
     }
     fn gas_left(self) -> u64 {
-        0
+        self.gas
     }
     fn current_address() -> [u8;20] {
         [0u8;20]

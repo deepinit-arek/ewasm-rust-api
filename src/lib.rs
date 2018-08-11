@@ -86,6 +86,30 @@ fn unsafe_alloc_buffer(len: usize) -> Vec<u8> {
     ret
 }
 
+#[derive(Default, Copy, Clone)]
+pub struct Uint128 {
+    pub bytes: [u8; 16],
+}
+
+#[derive(Default, Copy, Clone)]
+pub struct Bytes20 {
+    pub bytes: [u8; 20],
+}
+
+#[derive(Default, Copy, Clone)]
+pub struct Bytes32 {
+    pub bytes: [u8; 32],
+}
+
+type EtherValue = Uint128;
+type Address = Bytes20;
+type StorageKey = Bytes32;
+type StorageValue = Bytes32;
+type Topic = Bytes32;
+type Hash = Bytes32;
+// TODO: is this a number of a bytestring?
+type Difficulty = Bytes32;
+
 pub enum Error {
     OutOfBoundsCopy,
 }
@@ -97,7 +121,7 @@ pub enum CallResult {
 }
 
 pub enum CreateResult {
-    Successful([u8; 20]),
+    Successful(Address),
     Failure,
     Revert,
 }
@@ -112,42 +136,46 @@ pub fn gas_left() -> u64 {
     unsafe { native::ethereum_getGasLeft() }
 }
 
-pub fn current_address() -> [u8; 20] {
-    let mut ret = [0u8; 20];
+pub fn current_address() -> Address {
+    let mut ret = Address::default();
 
     unsafe {
-        native::ethereum_getAddress(ret.as_mut_ptr() as *const u32);
+        native::ethereum_getAddress(ret.bytes.as_mut_ptr() as *const u32);
     }
+
     ret
 }
 
-pub fn external_balance(address: &[u8; 20]) -> [u8; 16] {
-    let mut ret = [0u8; 16];
+pub fn external_balance(address: &Address) -> EtherValue {
+    let mut ret = EtherValue::default();
 
     unsafe {
         native::ethereum_getBalance(
-            address.as_ptr() as *const u32,
-            ret.as_mut_ptr() as *const u32,
+            address.bytes.as_ptr() as *const u32,
+            ret.bytes.as_mut_ptr() as *const u32,
         );
     }
+
     ret
 }
 
-pub fn block_coinbase() -> [u8; 20] {
-    let mut ret = [0u8; 20];
+pub fn block_coinbase() -> Address {
+    let mut ret = Address::default();
 
     unsafe {
-        native::ethereum_getBlockCoinbase(ret.as_mut_ptr() as *const u32);
+        native::ethereum_getBlockCoinbase(ret.bytes.as_mut_ptr() as *const u32);
     }
+
     ret
 }
 
-pub fn block_difficulty() -> [u8; 32] {
-    let mut ret = [0u8; 32];
+pub fn block_difficulty() -> Difficulty {
+    let mut ret = Difficulty::default();
 
     unsafe {
-        native::ethereum_getBlockDifficulty(ret.as_mut_ptr() as *const u32);
+        native::ethereum_getBlockDifficulty(ret.bytes.as_mut_ptr() as *const u32);
     }
+
     ret
 }
 
@@ -155,12 +183,13 @@ pub fn block_gas_limit() -> u64 {
     unsafe { native::ethereum_getBlockGasLimit() }
 }
 
-pub fn block_hash(number: u64) -> [u8; 32] {
-    let mut ret = [0u8; 32];
+pub fn block_hash(number: u64) -> Hash {
+    let mut ret = Hash::default();
 
     unsafe {
-        native::ethereum_getBlockHash(number, ret.as_mut_ptr() as *const u32);
+        native::ethereum_getBlockHash(number, ret.bytes.as_mut_ptr() as *const u32);
     }
+
     ret
 }
 
@@ -172,21 +201,23 @@ pub fn block_timestamp() -> u64 {
     unsafe { native::ethereum_getBlockTimestamp() }
 }
 
-pub fn tx_gas_price() -> [u8; 16] {
-    let mut ret = [0u8; 16];
+pub fn tx_gas_price() -> EtherValue {
+    let mut ret = EtherValue::default();
 
     unsafe {
-        native::ethereum_getTxGasPrice(ret.as_mut_ptr() as *const u32);
+        native::ethereum_getTxGasPrice(ret.bytes.as_mut_ptr() as *const u32);
     }
+
     ret
 }
 
-pub fn tx_origin() -> [u8; 20] {
-    let mut ret = [0u8; 20];
+pub fn tx_origin() -> Address {
+    let mut ret = Address::default();
 
     unsafe {
-        native::ethereum_getTxOrigin(ret.as_mut_ptr() as *const u32);
+        native::ethereum_getTxOrigin(ret.bytes.as_mut_ptr() as *const u32);
     }
+
     ret
 }
 
@@ -222,61 +253,61 @@ pub fn log0(data: &[u8]) {
     )
 }
 
-pub fn log1(data: &[u8], topic1: [u8; 32]) {
+pub fn log1(data: &[u8], topic1: &Topic) {
     log(
         data,
         1,
-        topic1.as_ptr() as *const u8,
+        topic1.bytes.as_ptr() as *const u8,
         0 as *const u8,
         0 as *const u8,
         0 as *const u8,
     )
 }
 
-pub fn log2(data: &[u8], topic1: [u8; 32], topic2: [u8; 32]) {
+pub fn log2(data: &[u8], topic1: &Topic, topic2: &Topic) {
     log(
         data,
         2,
-        topic1.as_ptr() as *const u8,
-        topic2.as_ptr() as *const u8,
+        topic1.bytes.as_ptr() as *const u8,
+        topic2.bytes.as_ptr() as *const u8,
         0 as *const u8,
         0 as *const u8,
     )
 }
 
-pub fn log3(data: &[u8], topic1: [u8; 32], topic2: [u8; 32], topic3: [u8; 32]) {
+pub fn log3(data: &[u8], topic1: &Topic, topic2: &Topic, topic3: &Topic) {
     log(
         data,
         3,
-        topic1.as_ptr() as *const u8,
-        topic2.as_ptr() as *const u8,
-        topic3.as_ptr() as *const u8,
+        topic1.bytes.as_ptr() as *const u8,
+        topic2.bytes.as_ptr() as *const u8,
+        topic3.bytes.as_ptr() as *const u8,
         0 as *const u8,
     )
 }
 
-pub fn log4(data: &[u8], topic1: [u8; 32], topic2: [u8; 32], topic3: [u8; 32], topic4: [u8; 32]) {
+pub fn log4(data: &[u8], topic1: &Topic, topic2: &Topic, topic3: &Topic, topic4: &Topic) {
     log(
         data,
         4,
-        topic1.as_ptr() as *const u8,
-        topic2.as_ptr() as *const u8,
-        topic3.as_ptr() as *const u8,
-        topic4.as_ptr() as *const u8,
+        topic1.bytes.as_ptr() as *const u8,
+        topic2.bytes.as_ptr() as *const u8,
+        topic3.bytes.as_ptr() as *const u8,
+        topic4.bytes.as_ptr() as *const u8,
     )
 }
 
 pub fn call_mutable(
     gas_limit: u64,
-    address: &[u8; 20],
-    value: &[u8; 16],
+    address: &Address,
+    value: &EtherValue,
     data: &[u8],
 ) -> CallResult {
     let ret = unsafe {
         native::ethereum_call(
             gas_limit,
-            address.as_ptr() as *const u32,
-            value.as_ptr() as *const u32,
+            address.bytes.as_ptr() as *const u32,
+            value.bytes.as_ptr() as *const u32,
             data.as_ptr() as *const u32,
             data.len() as u32,
         )
@@ -290,12 +321,12 @@ pub fn call_mutable(
     }
 }
 
-pub fn call_code(gas_limit: u64, address: &[u8; 20], value: &[u8; 16], data: &[u8]) -> CallResult {
+pub fn call_code(gas_limit: u64, address: &Address, value: &EtherValue, data: &[u8]) -> CallResult {
     let ret = unsafe {
         native::ethereum_callCode(
             gas_limit,
-            address.as_ptr() as *const u32,
-            value.as_ptr() as *const u32,
+            address.bytes.as_ptr() as *const u32,
+            value.bytes.as_ptr() as *const u32,
             data.as_ptr() as *const u32,
             data.len() as u32,
         )
@@ -309,11 +340,11 @@ pub fn call_code(gas_limit: u64, address: &[u8; 20], value: &[u8; 16], data: &[u
     }
 }
 
-pub fn call_delegate(gas_limit: u64, address: &[u8; 20], data: &[u8]) -> CallResult {
+pub fn call_delegate(gas_limit: u64, address: &Address, data: &[u8]) -> CallResult {
     let ret = unsafe {
         native::ethereum_callDelegate(
             gas_limit,
-            address.as_ptr() as *const u32,
+            address.bytes.as_ptr() as *const u32,
             data.as_ptr() as *const u32,
             data.len() as u32,
         )
@@ -327,11 +358,11 @@ pub fn call_delegate(gas_limit: u64, address: &[u8; 20], data: &[u8]) -> CallRes
     }
 }
 
-pub fn call_static(gas_limit: u64, address: &[u8; 20], data: &[u8]) -> CallResult {
+pub fn call_static(gas_limit: u64, address: &Address, data: &[u8]) -> CallResult {
     let ret = unsafe {
         native::ethereum_callStatic(
             gas_limit,
-            address.as_ptr() as *const u32,
+            address.bytes.as_ptr() as *const u32,
             data.as_ptr() as *const u32,
             data.len() as u32,
         )
@@ -345,15 +376,15 @@ pub fn call_static(gas_limit: u64, address: &[u8; 20], data: &[u8]) -> CallResul
     }
 }
 
-pub fn create(value: &[u8; 16], data: &[u8]) -> CreateResult {
-    let mut result = [0u8; 20];
+pub fn create(value: &EtherValue, data: &[u8]) -> CreateResult {
+    let mut result: Address = Address::default();
 
     let ret = unsafe {
         native::ethereum_create(
-            value.as_ptr() as *const u32,
+            value.bytes.as_ptr() as *const u32,
             data.as_ptr() as *const u32,
             data.len() as u32,
-            result.as_mut_ptr() as *const u32,
+            result.bytes.as_mut_ptr() as *const u32,
         )
     };
 
@@ -371,6 +402,7 @@ pub fn unsafe_calldata_copy(from: usize, length: usize) -> Vec<u8> {
     unsafe {
         native::ethereum_callDataCopy(ret.as_mut_ptr() as *const u32, from as u32, length as u32);
     }
+
     ret
 }
 
@@ -392,21 +424,23 @@ pub fn calldata_size() -> usize {
     unsafe { native::ethereum_getCallDataSize() as usize }
 }
 
-pub fn caller() -> [u8; 20] {
-    let mut ret = [0u8; 20];
+pub fn caller() -> Address {
+    let mut ret = Address::default();
 
     unsafe {
-        native::ethereum_getCaller(ret.as_mut_ptr() as *const u32);
+        native::ethereum_getCaller(ret.bytes.as_mut_ptr() as *const u32);
     }
+
     ret
 }
 
-pub fn callvalue() -> [u8; 16] {
-    let mut ret = [0u8; 16];
+pub fn callvalue() -> EtherValue {
+    let mut ret = EtherValue::default();
 
     unsafe {
-        native::ethereum_getCallValue(ret.as_mut_ptr() as *const u32);
+        native::ethereum_getCallValue(ret.bytes.as_mut_ptr() as *const u32);
     }
+
     ret
 }
 
@@ -416,6 +450,7 @@ pub fn unsafe_code_copy(from: usize, length: usize) -> Vec<u8> {
     unsafe {
         native::ethereum_codeCopy(ret.as_mut_ptr() as *const u32, from as u32, length as u32);
     }
+
     ret
 }
 
@@ -437,29 +472,26 @@ pub fn code_size() -> usize {
     unsafe { native::ethereum_getCodeSize() as usize }
 }
 
-pub fn unsafe_external_code_copy(address: &[u8; 20], from: usize, length: usize) -> Vec<u8> {
+pub fn unsafe_external_code_copy(address: &Address, from: usize, length: usize) -> Vec<u8> {
     let mut ret: Vec<u8> = unsafe_alloc_buffer(length);
 
     unsafe {
         native::ethereum_externalCodeCopy(
-            address.as_ptr() as *const u32,
+            address.bytes.as_ptr() as *const u32,
             ret.as_mut_ptr() as *const u32,
             from as u32,
             length as u32,
         );
     }
+
     ret
 }
 
-pub fn external_code_acquire(address: &[u8; 20]) -> Vec<u8> {
+pub fn external_code_acquire(address: &Address) -> Vec<u8> {
     unsafe_external_code_copy(address, 0, external_code_size(address))
 }
 
-pub fn external_code_copy(
-    address: &[u8; 20],
-    from: usize,
-    length: usize,
-) -> Result<Vec<u8>, Error> {
+pub fn external_code_copy(address: &Address, from: usize, length: usize) -> Result<Vec<u8>, Error> {
     let size = external_code_size(address);
 
     if (size < from) || ((size - from) < length) {
@@ -469,8 +501,8 @@ pub fn external_code_copy(
     }
 }
 
-pub fn external_code_size(address: &[u8; 20]) -> usize {
-    unsafe { native::ethereum_getExternalCodeSize(address.as_ptr() as *const u32) as usize }
+pub fn external_code_size(address: &Address) -> usize {
+    unsafe { native::ethereum_getExternalCodeSize(address.bytes.as_ptr() as *const u32) as usize }
 }
 
 pub fn unsafe_returndata_copy(from: usize, length: usize) -> Vec<u8> {
@@ -479,6 +511,7 @@ pub fn unsafe_returndata_copy(from: usize, length: usize) -> Vec<u8> {
     unsafe {
         native::ethereum_returnDataCopy(ret.as_mut_ptr() as *const u32, from as u32, length as u32);
     }
+
     ret
 }
 
@@ -524,23 +557,30 @@ pub fn finish_data(data: &[u8]) -> ! {
     }
 }
 
-pub fn storage_load(key: &[u8; 32]) -> [u8; 32] {
-    let mut ret = [0u8; 32];
+pub fn storage_load(key: &StorageKey) -> StorageValue {
+    let mut ret = StorageValue::default();
 
     unsafe {
-        native::ethereum_storageLoad(key.as_ptr() as *const u32, ret.as_mut_ptr() as *const u32);
+        native::ethereum_storageLoad(
+            key.bytes.as_ptr() as *const u32,
+            ret.bytes.as_mut_ptr() as *const u32,
+        );
     }
+
     ret
 }
 
-pub fn storage_store(key: &[u8; 32], value: &[u8; 32]) {
+pub fn storage_store(key: &StorageKey, value: &StorageValue) {
     unsafe {
-        native::ethereum_storageStore(key.as_ptr() as *const u32, value.as_ptr() as *const u32);
+        native::ethereum_storageStore(
+            key.bytes.as_ptr() as *const u32,
+            value.bytes.as_ptr() as *const u32,
+        );
     }
 }
 
-pub fn selfdestruct(address: &[u8; 20]) -> ! {
+pub fn selfdestruct(address: &Address) -> ! {
     unsafe {
-        native::ethereum_selfDestruct(address.as_ptr() as *const u32);
+        native::ethereum_selfDestruct(address.bytes.as_ptr() as *const u32);
     }
 }

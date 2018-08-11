@@ -102,6 +102,79 @@ pub enum CreateResult {
     Revert,
 }
 
+pub trait EwasmAPI: Send + Sync {
+    fn consume_gas(amount: u64);
+    fn gas_left(self) -> u64;
+    fn current_address() -> [u8;20];
+}
+
+#[derive(Debug)]
+pub struct NativeImpl;
+
+#[derive(Debug)]
+pub struct TestImpl {
+    gas:u64
+}
+
+impl Default for TestImpl {
+    fn default() -> TestImpl {
+        TestImpl {
+            gas: 0
+        }
+    }
+}
+
+/*
+trait TestSetter {
+   fn set_gas(mut self, amount: u64);
+}
+
+impl TestSetter for TestImpl {
+   fn set_gas(mut self, amount: u64) {
+       self.gas = amount
+   }
+}
+*/
+
+impl EwasmAPI for NativeImpl {
+    fn consume_gas(amount: u64) {
+    }
+    fn gas_left(self) -> u64 {
+        0
+    }
+    fn current_address() -> [u8;20] {
+        [0u8;20]
+    }
+}
+
+impl EwasmAPI for TestImpl {
+    fn consume_gas(amount: u64) {
+    }
+    fn gas_left(self) -> u64 {
+        0
+    }
+    fn current_address() -> [u8;20] {
+        [0u8;20]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{TestImpl, EwasmAPI};
+//        use super::{Builtin, Linear, ethereum_builtin, Pricer, ModexpPricer, modexp as me};
+//        use ethjson;
+//        use ethereum_types::U256;
+//        use bytes::BytesRef;
+//        use rustc_hex::FromHex;
+//        use num::{BigUint, Zero, One};
+
+    #[test]
+    fn consume_gas_func() {
+        assert_eq!(0, EwasmAPI::gas_left(<TestImpl>::default()))
+//        assert_eq!(TestImpl::default().gas_left(), 0)
+    }
+}
+
 pub fn consume_gas(amount: u64) {
     unsafe {
         native::ethereum_useGas(amount);
